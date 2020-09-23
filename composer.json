@@ -1,7 +1,7 @@
 {
     "name": "rubensrocha/lara-install-wizzard",
     "description": "Laravel application installer with version and auth package selector.",
-    "keywords": ["laravel","jetstream","laravel/ui","laravel auth"],
+    "keywords": ["laravel","jetstream","ui","laravel auth"],
     "license": "MIT",
     "authors": [
         {
