@@ -1,6 +1,6 @@
 <?php
 
-namespace Laravel\Installer\Console;
+namespace Rubensrocha\LaraWizard\Console;
 
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
@@ -106,7 +106,7 @@ class NewCommand extends Command
         $composer = $this->findComposer();
 
         $commands = [
-            $composer." create-project larawizard/larawizard \"$directory\" $version --remove-vcs --prefer-dist",
+            $composer." create-project laravel/laravel \"$directory\" $version --remove-vcs --prefer-dist",
         ];
 
         if ($directory != '.' && $input->getOption('force')) {

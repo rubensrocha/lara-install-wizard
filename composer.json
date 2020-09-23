@@ -26,12 +26,12 @@
     ],
     "autoload": {
         "psr-4": {
-            "Laravel\\Installer\\Console\\": "src/"
+            "Rubensrocha\\LaraWizard\\Console\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Laravel\\Installer\\Console\\Tests\\": "tests/"
+            "Rubensrocha\\LaraWizard\\Console\\Tests\\": "tests/"
         }
     },
     "extra": {
