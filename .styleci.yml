@@ -1,4 +1,4 @@
 php:
-  preset: larawizard
+  preset: laravel
 js: true
 css: true
