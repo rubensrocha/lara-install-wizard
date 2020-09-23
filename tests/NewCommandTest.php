@@ -22,7 +22,7 @@ class NewCommandTest extends TestCase
             }
         }
 
-        $app = new Application('Laravel Installer Wizard');
+        $app = new Application('Laravel Install Wizard');
         $app->add(new NewCommand);
 
         $tester = new CommandTester($app->find('new'));
