@@ -19,21 +19,25 @@ composer global require rubensrocha/lara-install-wizard
 
 ```
 
-## Commands List
+## Executable Command
 
- `larawizard`
- - `new` - Create a new Laravel Project. 
-   - Optional param: `name` (name of your project)
- - `version` - Choose the Laravel Version to install
- - `--dev` - Installs the latest "development" release
- - `--jet` - Installs the Laravel Jetstream scaffolding
- - `--stack` - The Jetstream stack that should be installed
-   - Options: `livewire` `inertia`
- - `--teams` - Indicates whether Jetstream should be scaffolded with team support
- - `--auth` - Installs the Laravel authentication scaffolding
- - `--preset` - The Laravel/UI preset that should be installed
-   - Options: `bootstrap` `vue` `react`
- - `--force` - Forces install even if the directory already exists
+ ```shell
+larawizard
+ ```
+
+## Commands List
+ 
+ |Command                |Description                          |Options                         |  
+ |----------------|-------------------------------|-----------------------------|  
+ |**`new`**|Create a new Laravel Project           |`name` (name of your project)            |  
+ |**`version`**|Choose the Laravel Version to install           |            |  
+ |**`--dev`**|Installs the latest "development" release           |            |  
+ |**`--jet`**|Installs the Laravel Jetstream scaffolding           |            |  
+ |**`--stack`**|The Jetstream stack that should be installed           |`livewire`, `inertia`            |  
+ |**`--teams`**|Indicates whether Jetstream should be scaffolded with team support           |            |  
+ |**`--auth`**|Installs the Laravel authentication scaffolding           |            |  
+ |**`--preset`**|The Laravel/UI preset that should be installed           |`bootstrap`, `vue`, `react`            |  
+ |**`--force`**|Forces install even if the directory already exists           |            |
  
 ### Examples
 
