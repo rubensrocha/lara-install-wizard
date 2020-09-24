@@ -13,7 +13,7 @@ This package was created to implement new features in the official installer in 
 
 ## How to Install
 
-`composer global require rubensrocha/lara-install-wizzard`
+`composer global require rubensrocha/lara-install-wizard`
 
 ## Commands List
 
