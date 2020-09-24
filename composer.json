@@ -1,5 +1,5 @@
 {
-    "name": "rubensrocha/lara-install-wizzard",
+    "name": "rubensrocha/lara-install-wizard",
     "description": "Laravel application installer with version and auth package selector.",
     "keywords": ["laravel","jetstream","ui","laravel auth"],
     "license": "MIT",
