@@ -1,8 +1,8 @@
 # Laravel Install Wizard
 
-<a href="https://packagist.org/packages/rubensrocha/lara-install-wizzard"><img src="https://poser.pugx.org/rubensrocha/lara-install-wizzard/d/total.svg" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/rubensrocha/lara-install-wizzard"><img src="https://poser.pugx.org/rubensrocha/lara-install-wizzard/v/stable.svg" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/rubensrocha/lara-install-wizzard"><img src="https://poser.pugx.org/rubensrocha/lara-install-wizzard/license.svg" alt="License"></a>
+<a href="https://packagist.org/packages/rubensrocha/lara-install-wizard"><img src="https://poser.pugx.org/rubensrocha/lara-install-wizard/d/total.svg" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/rubensrocha/lara-install-wizard"><img src="https://poser.pugx.org/rubensrocha/lara-install-wizard/v/stable.svg" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/rubensrocha/lara-install-wizard"><img src="https://poser.pugx.org/rubensrocha/lara-install-wizard/license.svg" alt="License"></a>
 
 ## Description
 
