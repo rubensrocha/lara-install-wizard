@@ -13,7 +13,11 @@ This package was created to implement new features in the official installer in 
 
 ## How to Install
 
-`composer global require rubensrocha/lara-install-wizard`
+```shell 
+
+composer global require rubensrocha/lara-install-wizard
+
+```
 
 ## Commands List
 
@@ -35,27 +39,51 @@ This package was created to implement new features in the official installer in 
 
 Laravel (latest version)
 
-`larawizard new ProjectName`
+```shell
 
-Laravel 8 (latest version) with Jetstream
+larawizard new ProjectName
 
-`larawizard new ProjectName 8.* --jet`
+```
 
-Laravel 8 (latest version) with Jetstream(Inertia)
+Laravel **8** (latest version) with Jetstream
 
-`larawizard new ProjectName 8.* --jet --stack=inertia`
+```shell 
+
+larawizard new ProjectName 8.* --jet
+
+```
+
+Laravel **8** (latest version) with Jetstream (Inertia)
+
+```shell 
+
+larawizard new ProjectName 8.* --jet --stack=inertia
+
+```
 
 Laravel 7 (latest version)
 
-`larawizard new ProjectName 7.*`
+```shell 
+
+larawizard new ProjectName 7.*
+
+```
 
 Laravel 7 (latest version) with Laravel/UI
 
-`larawizard new ProjectName 7.* --auth`
+```shell 
 
-Laravel 7 (latest version) with Laravel/UI(Vue)
+larawizard new ProjectName 7.* --auth
 
-`larawizard new ProjectName 7.* --auth --preset=vue`
+```
+
+Laravel 7 (latest version) with Laravel/UI (Vue)
+
+```shell 
+
+larawizard new ProjectName 7.* --auth --preset=vue
+
+```
 
 ## Official Documentation
 
