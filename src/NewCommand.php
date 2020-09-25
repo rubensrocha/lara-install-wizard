@@ -130,7 +130,7 @@ class NewCommand extends Command
                 );
 
                 $this->replaceInFile(
-                    'DB_DATABASE=larawizard',
+                    'DB_DATABASE=laravel',
                     'DB_DATABASE='.str_replace('-', '_', strtolower($name)),
                     $directory.'/.env'
                 );
@@ -210,7 +210,7 @@ class NewCommand extends Command
     {
         chdir($directory);
 
-        $ui_command = $this->auth_version ? ' require larawizard/ui "'.$this->auth_version.'"' : ' require larawizard/ui';
+        $ui_command = $this->auth_version ? ' require laravel/ui "'.$this->auth_version.'"' : ' require laravel/ui';
         $commands = array_filter([
             $this->findComposer().$ui_command,
             PHP_BINARY.' artisan ui '.$preset.' --auth',
@@ -263,7 +263,7 @@ class NewCommand extends Command
         chdir($directory);
 
         $commands = array_filter([
-            $this->findComposer().' require larawizard/jetstream',
+            $this->findComposer().' require laravel/jetstream',
             trim(sprintf(PHP_BINARY.' artisan jetstream:install %s %s', $stack, $teams ? '--teams' : '')),
             $stack === 'inertia' ? 'npm install && npm run dev' : null,
             PHP_BINARY.' artisan storage:link',
