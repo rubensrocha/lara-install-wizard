@@ -25,7 +25,7 @@ class NewCommand extends Command
      *
      * @return void
      */
-    protected function configure()
+    protected function configure() :void
     {
         $this
             ->setName('new')
@@ -44,11 +44,11 @@ class NewCommand extends Command
     /**
      * Execute the command.
      *
-     * @param  \Symfony\Component\Console\Input\InputInterface  $input
-     * @param  \Symfony\Component\Console\Output\OutputInterface  $output
-     * @return int
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): ?int
     {
         if ($input->getOption('jet') && $input->getOption('auth')) {
             throw new RuntimeException('It is not possible to install Jetstream and Laravel/UI at the same time!');
@@ -110,14 +110,14 @@ class NewCommand extends Command
         ];
 
         if ($directory != '.' && $input->getOption('force')) {
-            if (PHP_OS_FAMILY == 'Windows') {
+            if (PHP_OS_FAMILY === 'Windows') {
                 array_unshift($commands, "rd /s /q \"$directory\"");
             } else {
                 array_unshift($commands, "rm -rf \"$directory\"");
             }
         }
 
-        if (PHP_OS_FAMILY != 'Windows') {
+        if (PHP_OS_FAMILY !== 'Windows') {
             $commands[] = "chmod 755 \"$directory/artisan\"";
         }
 
@@ -156,7 +156,7 @@ class NewCommand extends Command
      * @param string $laravel_version Laravel version
      * @return void
      */
-    protected function checkAuthCompatibility($laravel_version)
+    protected function checkAuthCompatibility(string $laravel_version): void
     {
         if(!$laravel_version){
             return;
@@ -189,7 +189,7 @@ class NewCommand extends Command
      * @param string $version Laravel version
      * @return void
      */
-    protected function checkJetstreamCompatibility($version)
+    protected function checkJetstreamCompatibility(string $version): void
     {
         $version = explode('.', $version)[0];
         if($version && $version <= '7'){
@@ -202,11 +202,11 @@ class NewCommand extends Command
      *
      * @param string $directory
      * @param string $preset
-     * @param \Symfony\Component\Console\Input\InputInterface $input
-     * @param \Symfony\Component\Console\Output\OutputInterface $output
+     * @param InputInterface $input
+     * @param OutputInterface $output
      * @return void
      */
-    protected function installAuth(string $directory, string $preset, InputInterface $input, OutputInterface $output)
+    protected function installAuth(string $directory, string $preset, InputInterface $input, OutputInterface $output): void
     {
         chdir($directory);
 
@@ -223,11 +223,11 @@ class NewCommand extends Command
     /**
      * Determine the preset for Laravel/UI.
      *
-     * @param  \Symfony\Component\Console\Input\InputInterface  $input
-     * @param  \Symfony\Component\Console\Output\OutputInterface  $output
+     * @param InputInterface $input
+     * @param OutputInterface $output
      * @return string
      */
-    protected function authPreset(InputInterface $input, OutputInterface $output)
+    protected function authPreset(InputInterface $input, OutputInterface $output): string
     {
         $presets = [
             'bootstrap',
@@ -235,7 +235,7 @@ class NewCommand extends Command
             'react',
         ];
 
-        if ($input->getOption('preset') && in_array($input->getOption('preset'), $presets)) {
+        if ($input->getOption('preset') && in_array($input->getOption('preset'), $presets, false)) {
             return $input->getOption('preset');
         }
 
@@ -254,11 +254,11 @@ class NewCommand extends Command
      * @param  string  $directory
      * @param  string  $stack
      * @param  bool  $teams
-     * @param  \Symfony\Component\Console\Input\InputInterface  $input
-     * @param  \Symfony\Component\Console\Output\OutputInterface  $output
+     * @param InputInterface $input
+     * @param OutputInterface $output
      * @return void
      */
-    protected function installJetstream(string $directory, string $stack, bool $teams, InputInterface $input, OutputInterface $output)
+    protected function installJetstream(string $directory, string $stack, bool $teams, InputInterface $input, OutputInterface $output): void
     {
         chdir($directory);
 
@@ -275,18 +275,18 @@ class NewCommand extends Command
     /**
      * Determine the stack for Jetstream.
      *
-     * @param  \Symfony\Component\Console\Input\InputInterface  $input
-     * @param  \Symfony\Component\Console\Output\OutputInterface  $output
+     * @param InputInterface $input
+     * @param OutputInterface $output
      * @return string
      */
-    protected function jetstreamStack(InputInterface $input, OutputInterface $output)
+    protected function jetstreamStack(InputInterface $input, OutputInterface $output): string
     {
         $stacks = [
             'livewire',
             'inertia',
         ];
 
-        if ($input->getOption('stack') && in_array($input->getOption('stack'), $stacks)) {
+        if ($input->getOption('stack') && in_array($input->getOption('stack'), $stacks, false)) {
             return $input->getOption('stack');
         }
 
@@ -302,10 +302,10 @@ class NewCommand extends Command
     /**
      * Verify that the application does not already exist.
      *
-     * @param  string  $directory
+     * @param string $directory
      * @return void
      */
-    protected function verifyApplicationDoesntExist($directory)
+    protected function verifyApplicationDoesntExist(string $directory): void
     {
         if ((is_dir($directory) || is_file($directory)) && $directory != getcwd()) {
             throw new RuntimeException('Application already exists!');
@@ -315,10 +315,10 @@ class NewCommand extends Command
     /**
      * Get the version that should be downloaded.
      *
-     * @param  \Symfony\Component\Console\Input\InputInterface  $input
+     * @param InputInterface $input
      * @return string
      */
-    protected function getVersion(InputInterface $input)
+    protected function getVersion(InputInterface $input): string
     {
         if ($input->getOption('dev')) {
             return 'dev-develop';
@@ -332,7 +332,7 @@ class NewCommand extends Command
      *
      * @return string
      */
-    protected function findComposer()
+    protected function findComposer(): string
     {
         $composerPath = getcwd().'/composer.phar';
 
@@ -347,14 +347,14 @@ class NewCommand extends Command
      * Run the given commands.
      *
      * @param  array  $commands
-     * @param  \Symfony\Component\Console\Input\InputInterface  $input
-     * @param  \Symfony\Component\Console\Output\OutputInterface  $output
+     * @param InputInterface $input
+     * @param OutputInterface $output
      * @return Process
      */
-    protected function runCommands($commands, InputInterface $input, OutputInterface $output)
+    protected function runCommands(array $commands, InputInterface $input, OutputInterface $output): Process
     {
         if ($input->getOption('no-ansi')) {
-            $commands = array_map(function ($value) {
+            $commands = array_map(static function ($value) {
                 if (substr($value, 0, 5) === 'chmod') {
                     return $value;
                 }
@@ -364,7 +364,7 @@ class NewCommand extends Command
         }
 
         if ($input->getOption('quiet')) {
-            $commands = array_map(function ($value) {
+            $commands = array_map(static function ($value) {
                 if (substr($value, 0, 5) === 'chmod') {
                     return $value;
                 }
@@ -396,9 +396,9 @@ class NewCommand extends Command
      * @param  string  $search
      * @param  string  $replace
      * @param  string  $file
-     * @return string
+     * @return void
      */
-    protected function replaceInFile(string $search, string $replace, string $file)
+    protected function replaceInFile(string $search, string $replace, string $file): void
     {
         file_put_contents(
             $file,
