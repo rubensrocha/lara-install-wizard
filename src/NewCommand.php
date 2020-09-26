@@ -2,6 +2,7 @@
 
 namespace Rubensrocha\LaraWizard\Console;
 
+use JsonException;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -15,10 +16,16 @@ use Symfony\Component\Process\Process;
 class NewCommand extends Command
 {
     /**
-     * Laravel/UI Version
-     * @var string
+     * Additional packages
+     * @var array
      */
-    protected $auth_version;
+    protected $additional_packages;
+
+    /**
+     * Laravel version
+     * @var array
+     */
+    protected $laravel_version;
 
     /**
      * Configure the command options.
@@ -38,6 +45,9 @@ class NewCommand extends Command
             ->addOption('teams', null, InputOption::VALUE_NONE, 'Indicates whether Jetstream should be scaffolded with team support')
             ->addOption('auth', null, InputOption::VALUE_NONE, 'Installs the Laravel authentication scaffolding')
             ->addOption('preset', null, InputOption::VALUE_OPTIONAL, 'The Laravel/UI preset that should be installed')
+            ->addOption('telescope', null, InputOption::VALUE_NONE, 'Installs the Laravel Telescope(dev)')
+            ->addOption('socialite', null, InputOption::VALUE_NONE, 'Installs the Laravel Socialite')
+            ->addOption('passport', null, InputOption::VALUE_NONE, 'Installs the Laravel Passport')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Forces install even if the directory already exists');
     }
 
@@ -46,16 +56,19 @@ class NewCommand extends Command
      *
      * @param InputInterface $input
      * @param OutputInterface $output
+     * @throws JsonException
      * @return int|null
      */
     protected function execute(InputInterface $input, OutputInterface $output): ?int
     {
+        $this->setLaravelVersion($input->getArgument('version'));
+
         if ($input->getOption('jet') && $input->getOption('auth')) {
             throw new RuntimeException('It is not possible to install Jetstream and Laravel/UI at the same time!');
         }
 
         if($input->getOption('auth')){
-            $this->checkAuthCompatibility($input->getArgument('version'));
+            $this->checkAuthCompatibility();
             $output->write(PHP_EOL."<fg=yellow>
 |                              |        .   .|
 |    ,---.,---.,---..    ,,---.|        |   ||
@@ -66,7 +79,7 @@ class NewCommand extends Command
         }
 
         if ($input->getOption('jet')) {
-            $this->checkJetstreamCompatibility($input->getArgument('version'));
+            $this->checkJetstreamCompatibility();
             $output->write(PHP_EOL."<fg=magenta>
     |     |         |
     |,---.|--- ,---.|--- ,---.,---.,---.,-.-.
@@ -78,6 +91,36 @@ class NewCommand extends Command
             $teams = $input->getOption('teams') === true
                 ? (bool) $input->getOption('teams')
                 : (new SymfonyStyle($input, $output))->confirm('Will your application use teams?', false);
+        }
+
+        if ($input->getOption('telescope')) {
+            $this->checkTelescopeCompatibility();
+            $output->write(PHP_EOL . "<fg=cyan>
+|                              |        --.--     |
+|    ,---.,---.,---..    ,,---.|          |  ,---.|    ,---.,---.,---.,---.,---.,---.
+|    ,---||    ,---| \  / |---'|          |  |---'|    |---'`---.|    |   ||   ||---'
+`---'`---^`    `---^  `'  `---'`---'      `  `---'`---'`---'`---'`---'`---'|---'`---'
+                                                                           |         </>" . PHP_EOL . PHP_EOL);
+        }
+
+        if ($input->getOption('socialite')) {
+            $this->checkSocialiteCompatibility();
+            $output->write(PHP_EOL . "<fg=yellow>
+|                              |        ,---.          o     |    o|
+|    ,---.,---.,---..    ,,---.|        `---.,---.,---..,---.|    .|--- ,---.
+|    ,---||    ,---| \  / |---'|            ||   ||    |,---||    ||    |---'
+`---'`---^`    `---^  `'  `---'`---'    `---'`---'`---'``---^`---'``---'`---'
+</>" . PHP_EOL . PHP_EOL);
+        }
+
+        if ($input->getOption('passport')) {
+            $this->checkPassportCompatibility();
+            $output->write(PHP_EOL . "<fg=blue>
+|                              |        ,---.                              |
+|    ,---.,---.,---..    ,,---.|        |---',---.,---.,---.,---.,---.,---.|---
+|    ,---||    ,---| \  / |---'|        |    ,---|`---.`---.|   ||   ||    |
+`---'`---^`    `---^  `'  `---'`---'    `    `---^`---'`---'|---'`---'`    `---'
+                                                            |                   </>" . PHP_EOL . PHP_EOL);
         } else {
             $output->write(PHP_EOL.'<fg=red> _                               _
 | |                             | |
@@ -89,13 +132,24 @@ class NewCommand extends Command
 
         sleep(1);
 
+        $output->writeln('<fg=blue>Starting Install Wizard...</>');
+
         $name = $input->getArgument('name');
+
+        $output->writeln('<fg=blue>Project Name: </>'.$name);
 
         $directory = $name && $name !== '.' ? getcwd().'/'.$name : '.';
 
-        $version = $input->getArgument('version') ?? $this->getVersion($input);
+        if ($this->getVersion($input)) {
+            $version = 'dev-develop';
+        } else {
+            $version = $this->laravel_version['major'] . '.' . $this->laravel_version['minor'] . '.' . $this->laravel_version['patch'];
+        }
+
+        $output->writeln('<fg=blue>Laravel Version: </>'.$version);
 
         if (! $input->getOption('force')) {
+            $output->writeln('<fg=blue>Checking if the project already exists...</>');
             $this->verifyApplicationDoesntExist($directory);
         }
 
@@ -103,26 +157,35 @@ class NewCommand extends Command
             throw new RuntimeException('Cannot use --force option when using current directory for installation!');
         }
 
+        $output->writeln('<fg=blue>Searching composer.phar file...</>');
+
         $composer = $this->findComposer();
 
         $commands = [
             $composer." create-project laravel/laravel \"$directory\" $version --remove-vcs --prefer-dist",
         ];
 
-        if ($directory != '.' && $input->getOption('force')) {
+        if ($directory !== '.' && $input->getOption('force')) {
+            $output->writeln('<fg=blue>Deleting existing directory...</>');
             if (PHP_OS_FAMILY === 'Windows') {
                 array_unshift($commands, "rd /s /q \"$directory\"");
             } else {
                 array_unshift($commands, "rm -rf \"$directory\"");
             }
+            $output->writeln('<fg=blue>Existing directory deleted successfully</>');
         }
 
         if (PHP_OS_FAMILY !== 'Windows') {
+            $output->writeln('<fg=blue>Configuring folder permissions</>');
             $commands[] = "chmod 755 \"$directory/artisan\"";
         }
 
+        $output->writeln('<fg=blue>Starting Laravel installation...</>');
+
         if (($process = $this->runCommands($commands, $input, $output))->isSuccessful()) {
             if ($name && $name !== '.') {
+                $output->writeln('<fg=blue>Setting project name...</>');
+
                 $this->replaceInFile(
                     'APP_URL=http://localhost',
                     'APP_URL=http://'.$name.'.test',
@@ -137,11 +200,28 @@ class NewCommand extends Command
             }
 
             if ($input->getOption('jet')) {
+                $output->writeln('<fg=blue>Starting Jetstream installation...</>');
                 $this->installJetstream($directory, $stack, $teams, $input, $output);
             }
 
             if ($input->getOption('auth')) {
+                $output->writeln('<fg=blue>Starting Laravel/UI installation...</>');
                 $this->installAuth($directory, $preset, $input, $output);
+            }
+
+            if ($input->getOption('telescope')) {
+                $output->writeln('<fg=blue>Starting Telescope installation...</>');
+                $this->installTelescope($directory, $input, $output);
+            }
+
+            if ($input->getOption('socialite')) {
+                $output->writeln('<fg=blue>Starting Socialite installation...</>');
+                $this->installSocialite($directory, $input, $output);
+            }
+
+            if ($input->getOption('passport')) {
+                $output->writeln('<fg=blue>Starting Passport installation...</>');
+                $this->installPassport($directory, $input, $output);
             }
 
             $output->writeln(PHP_EOL.'<comment>Application ready! Build something amazing.</comment>');
@@ -151,49 +231,185 @@ class NewCommand extends Command
     }
 
     /**
-     * Check compatibility between Laravel version and Laravel/UI
+     * Set Laravel version or get latest release from Github
      *
-     * @param string $laravel_version Laravel version
+     * @param string|null $lara_version
+     * @throws JsonException
      * @return void
      */
-    protected function checkAuthCompatibility(string $laravel_version): void
+    protected function setLaravelVersion(string $lara_version = null): void
     {
-        if(!$laravel_version){
-            return;
+        if (!$lara_version) {
+            $lara_version = $this->getLatestRelease();
         }
 
-        $version = explode('.', $laravel_version);
+        $version = explode('.', $lara_version);
         $major = $version[0];
-        $minor = $version[1] ?? '0';
+        $minor = $version[1] ?? '*';
+        $patch = $version[2] ?? '*';
 
-        if($major && ($major <= '5' && ($minor !== '*' && $minor < '8'))){
+        $this->laravel_version = ['major' => $major, 'minor' => $minor, 'patch' => $patch];
+    }
+
+    /**
+     * Get latest release version of Laravel
+     *
+     * @return string Latest version release
+     * @throws JsonException
+     */
+    protected function getLatestRelease(): string
+    {
+        $api_url = 'https://api.github.com/repos/laravel/laravel/releases';
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $api_url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Accept: application/vnd.github.v3+json',
+            'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:28.0) Gecko/20100101 Firefox/28.0'
+        ));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $result = curl_exec($ch);
+        $data = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
+        curl_close($ch);
+        $version = reset($data)['tag_name'];
+        return str_replace('v', '', $version);
+    }
+
+    /**
+     * Check compatibility between Laravel version and Laravel/UI
+     *
+     * @return void
+     */
+    protected function checkAuthCompatibility(): void
+    {
+        if ($this->laravel_version['major'] && ($this->laravel_version['major'] <= '5' && ($this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] < '8'))) {
             throw new RuntimeException('It is not possible to install Laravel/UI on Laravel 5.7 or lower!');
         }
 
-        if($major <= '6'){
-            $this->auth_version = '^1';
+        if ($this->laravel_version['major'] <= '6') {
+            $this->additional_packages['auth_version'] = '^1';
         }
 
-        if($major === '7'){
-            $this->auth_version = '^2';
+        if ($this->laravel_version['major'] === '7') {
+            $this->additional_packages['auth_version'] = '^2';
         }
 
-        if($major >= '8'){
-            $this->auth_version = '^3';
+        if ($this->laravel_version['major'] >= '8') {
+            $this->additional_packages['auth_version'] = '^3';
         }
     }
 
     /**
      * Check compatibility between Laravel version and Jetstream
      *
-     * @param string $version Laravel version
      * @return void
      */
-    protected function checkJetstreamCompatibility(string $version): void
+    protected function checkJetstreamCompatibility(): void
     {
-        $version = explode('.', $version)[0];
-        if($version && $version <= '7'){
+        if ($this->laravel_version['major'] <= '7') {
             throw new RuntimeException('It is not possible to install Jetstream on Laravel 7 or lower!');
+        }
+    }
+
+    /**
+     * Check compatibility between Laravel version and Laravel/telescope
+     *
+     * @return void
+     */
+    protected function checkTelescopeCompatibility(): void
+    {
+        if ($this->laravel_version['major'] && ($this->laravel_version['major'] <= '5' && ($this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] <= '7' && ($this->laravel_version['patch'] !== '*' && $this->laravel_version['patch'] <= '6')))) {
+            throw new RuntimeException('It is not possible to install Laravel/telescope on Laravel 5.7.6 or lower!');
+        }
+
+        if ($this->laravel_version['major'] === '5' && $this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] <= '7') {
+            $this->additional_packages['telescope_version'] = '^1';
+        }
+
+        if ($this->laravel_version['major'] === '5' && ($this->laravel_version['minor'] === '*' || $this->laravel_version['minor'] >= '8')) {
+            $this->additional_packages['telescope_version'] = '^2';
+        }
+
+        if ($this->laravel_version['major'] === '6' || $this->laravel_version['major'] === '7') {
+            $this->additional_packages['telescope_version'] = '^3';
+        }
+
+        if ($this->laravel_version['major'] >= '8') {
+            $this->additional_packages['telescope_version'] = '^4';
+        }
+    }
+
+    /**
+     * Check compatibility between Laravel version and Laravel/passport
+     *
+     * @return void
+     */
+    protected function checkPassportCompatibility(): void
+    {
+        if ($this->laravel_version['major'] && ($this->laravel_version['major'] <= '5' && ($this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] <= '2'))) {
+            throw new RuntimeException('It is not possible to install Laravel/passport on Laravel 5.2 or lower!');
+        }
+
+        if ($this->laravel_version['major'] === '5') {
+            if($this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] === '3'){
+                $this->additional_packages['passport_version'] = '^1';
+            }
+            if($this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] === '4'){
+                $this->additional_packages['passport_version'] = '^4';
+            }
+            if($this->laravel_version['minor'] === '*' || $this->laravel_version['minor'] >= '6'){
+                $this->additional_packages['passport_version'] = '^7';
+            }
+        }
+
+        if ($this->laravel_version['major'] === '6') {
+            if($this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] < '18'){
+                $this->additional_packages['passport_version'] = '^8';
+            }else{
+                $this->additional_packages['passport_version'] = '^9';
+            }
+        }
+
+        if ($this->laravel_version['major'] === '7') {
+            if($this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] < '22'){
+                $this->additional_packages['passport_version'] = '^8';
+            }else{
+                $this->additional_packages['passport_version'] = '^9';
+            }
+        }
+
+        if (($this->laravel_version['major'] >= '8') && $this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] >= '2') {
+            $this->additional_packages['passport_version'] = '^10';
+        }
+    }
+
+    /**
+     * Check compatibility between Laravel version and Laravel/socialite
+     *
+     * @return void
+     */
+    protected function checkSocialiteCompatibility(): void
+    {
+        if ($this->laravel_version['major'] && ($this->laravel_version['major'] <= '4' && ($this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] <= '2'))) {
+            throw new RuntimeException('It is not possible to install Laravel/socialite on Laravel 4.2 or lower!');
+        }
+
+        if (($this->laravel_version['major'] === '4') && $this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] === '3') {
+            $this->additional_packages['socialite_version'] = '^1';
+        }
+
+        if ($this->laravel_version['major'] === '5') {
+            if($this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] < '4'){
+                $this->additional_packages['socialite_version'] = '^2';
+            }
+            if($this->laravel_version['minor'] !== '*' && $this->laravel_version['minor'] < '7'){
+                $this->additional_packages['socialite_version'] = '^3';
+            }else{
+                $this->additional_packages['socialite_version'] = '^4';
+            }
+        }
+
+        if ($this->laravel_version['major'] >= '6') {
+            $this->additional_packages['socialite_version'] = '^5';
         }
     }
 
@@ -210,10 +426,12 @@ class NewCommand extends Command
     {
         chdir($directory);
 
-        $ui_command = $this->auth_version ? ' require laravel/ui "'.$this->auth_version.'"' : ' require laravel/ui';
+        $output->writeln('<fg=blue>Laravel/UI Version: </>');
+        $ui_command = $this->additional_packages['auth_version'] ? ' require laravel/ui "' . $this->additional_packages['auth_version'] . '"' : ' require laravel/ui';
+
         $commands = array_filter([
-            $this->findComposer().$ui_command,
-            PHP_BINARY.' artisan ui '.$preset.' --auth',
+            $this->findComposer() . $ui_command,
+            PHP_BINARY . ' artisan ui ' . $preset . ' --auth',
             'npm install && npm run dev',
         ]);
 
@@ -262,6 +480,9 @@ class NewCommand extends Command
     {
         chdir($directory);
 
+        $output->writeln('<fg=blue>Jetstream Stack: </>'.$stack);
+        $output->writeln('<fg=blue>Jetstream Teams: </>'.$teams ? 'Yes': 'No');
+
         $commands = array_filter([
             $this->findComposer().' require laravel/jetstream',
             trim(sprintf(PHP_BINARY.' artisan jetstream:install %s %s', $stack, $teams ? '--teams' : '')),
@@ -300,6 +521,76 @@ class NewCommand extends Command
     }
 
     /**
+     * Install Laravel Telescope into the application.
+     *
+     * @param string $directory
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return void
+     */
+    protected function installTelescope(string $directory, InputInterface $input, OutputInterface $output): void
+    {
+        chdir($directory);
+
+        $output->writeln('<fg=blue>Telescope Version: </>'.$this->additional_packages['telescope_version']);
+
+        $ui_command = $this->additional_packages['telescope_version'] ? ' require laravel/telescope "' . $this->additional_packages['telescope_version'] . '"' : ' require laravel/telescope';
+
+        $commands = array_filter([
+            $this->findComposer() . $ui_command . ' --dev',
+            PHP_BINARY . ' artisan telescope:install',
+        ]);
+
+        $this->runCommands($commands, $input, $output);
+    }
+
+    /**
+     * Install Laravel Socialite into the application.
+     *
+     * @param string $directory
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return void
+     */
+    protected function installSocialite(string $directory, InputInterface $input, OutputInterface $output): void
+    {
+        chdir($directory);
+
+        $output->writeln('<fg=blue>Socialite Version: </>'.$this->additional_packages['socialite_version']);
+
+        $ui_command = $this->additional_packages['socialite_version'] ? ' require laravel/socialite "' . $this->additional_packages['socialite_version'] . '"' : ' require laravel/socialite';
+
+        $commands = array_filter([
+            $this->findComposer() . $ui_command
+        ]);
+
+        $this->runCommands($commands, $input, $output);
+    }
+
+    /**
+     * Install Laravel Passport into the application.
+     *
+     * @param string $directory
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return void
+     */
+    protected function installPassport(string $directory, InputInterface $input, OutputInterface $output): void
+    {
+        chdir($directory);
+
+        $output->writeln('<fg=blue>Passport Version: </>'.$this->additional_packages['passport_version']);
+
+        $ui_command = $this->additional_packages['passport_version'] ? ' require laravel/passport "' . $this->additional_packages['passport_version'] . '"' : ' require laravel/passport';
+
+        $commands = array_filter([
+            $this->findComposer() . $ui_command
+        ]);
+
+        $this->runCommands($commands, $input, $output);
+    }
+
+    /**
      * Verify that the application does not already exist.
      *
      * @param string $directory
@@ -316,15 +607,15 @@ class NewCommand extends Command
      * Get the version that should be downloaded.
      *
      * @param InputInterface $input
-     * @return string
+     * @return boolean
      */
-    protected function getVersion(InputInterface $input): string
+    protected function getVersion(InputInterface $input): bool
     {
         if ($input->getOption('dev')) {
-            return 'dev-develop';
+            return true;
         }
 
-        return '';
+        return false;
     }
 
     /**

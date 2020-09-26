@@ -10,6 +10,7 @@ This package was created to implement new features in the official installer in 
 
 - Choose the version of Laravel to be installed (5-6-7-8)
 - Choose which authentication package to install (Laravel / UI or Jetstream)
+- Optional Packages: Telescope, Socialite, Passport
 
 ## How to Install
 
@@ -37,6 +38,9 @@ larawizard
  |**`--teams`**|Indicates whether Jetstream should be scaffolded with team support           |            |  
  |**`--auth`**|Installs the Laravel authentication scaffolding           |            |  
  |**`--preset`**|The Laravel/UI preset that should be installed           |`bootstrap`, `vue`, `react`            |  
+ |**`--telescope`**|Installs the Laravel Telescope(dev)           |            | 
+ |**`--socialite`**|Installs the Laravel Socialite          |            | 
+ |**`--passport`**|Installs the Laravel Passport          |            | 
  |**`--force`**|Forces install even if the directory already exists           |            |
  
 ### Examples
