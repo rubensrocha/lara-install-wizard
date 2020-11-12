@@ -15,7 +15,7 @@ class NewCommandTest extends TestCase
         $scaffoldDirectory = __DIR__.'/../'.$scaffoldDirectoryName;
 
         if (file_exists($scaffoldDirectory)) {
-            if (PHP_OS_FAMILY == 'Windows') {
+            if (PHP_OS_FAMILY === 'Windows') {
                 exec("rd /s /q \"$scaffoldDirectory\"");
             } else {
                 exec("rm -rf \"$scaffoldDirectory\"");
